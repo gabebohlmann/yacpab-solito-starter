@@ -67,7 +67,7 @@ function CustomDrawerHeaderLeft({
 export default function DrawerLayout({
   children, // children might not be directly used if all content is via navigator
 }: {
-  children: React.ReactNode
+  children?: React.ReactNode
 }) {
   // const [isClient, setIsClient] = useState(false); // 'use client' handles client-side execution
   // useEffect(() => {
