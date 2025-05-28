@@ -52,9 +52,7 @@ export default function RootLayout({
           {/* <ThemeProvider
             value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
           > */}
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              {/* <NavigationContainer> */}
-              {/* <NavigationContainer independent={true}> */}
+              {/* <NavigationContainer> */}         
               <NavigationContainer
                 theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
               >
@@ -67,7 +65,6 @@ export default function RootLayout({
                 <AppRootStack />
                 {/* <NativeToast /> */} {/* If you want NativeToast here */}
               </NavigationContainer>
-            </GestureHandlerRootView>
           {/* </ThemeProvider>   */}
         </StylesProvider>
       </body>
