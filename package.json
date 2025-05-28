@@ -7,7 +7,8 @@
   ],
   "devDependencies": {
     "@types/react": "^18.2.21",
-    "eslint": "^8.21.0",
+    "@types/react-dom": "^18",
+    "eslint": "^9.27.0",
     "turbo": "^2.4.4",
     "typescript": "^5.2.2"
   },
@@ -30,5 +31,15 @@
     "useTabs": false,
     "tabWidth": 2,
     "singleQuote": true
+  },
+  "dependencies": {
+    "@react-navigation/native": "^7.1.9",
+    "react": "~18.2.0",
+    "react-dom": "~18.2.0",
+    "react-native": "^0.79.2",
+    "react-native-gesture-handler": "^2.25.0",
+    "react-native-reanimated": "^3.17.5",
+    "react-native-safe-area-context": "^5.4.1",
+    "react-native-screens": "^4.11.1"
   }
 }
