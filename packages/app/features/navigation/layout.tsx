@@ -1,84 +1,118 @@
 // packages/app/features/navigation/layout.tsx
 import { ComponentType } from 'react'
-import { Text, ViewStyle } from 'react-native'
+import { Text, ViewStyle } from 'react-native' // Keep Text for PlaceholderIcon example
 import { HomeScreen } from '../home/screen'
 import { AccountScreen } from '../account/screen'
 import { SubsScreen } from '../subs/screen'
-import { SettingsScreen } from '../settings/screen' // Assuming you have this
-import { OptionsScreen } from '../options/screen' // Assuming you have this
+import { SettingsScreen } from '../settings/screen'
+import { OptionsScreen } from '../options/screen'
+import { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs'
+import { DrawerNavigationOptions } from '@react-navigation/drawer'
+import { StackNavigationOptions } from '@react-navigation/stack'
 
-type GenericNavigationOptions = any // Replace with specific types if possible/desired
-
-export const isAutoSaveEnabled = true
-export const isEditing = false
+// Generic options type, can be a union of specific navigator options if refined further
+type GenericNavigatorSpecificOptions = any // For navigator-level settings like drawerType, tabBarStyle etc.
 
 // --- Configuration Types ---
 
 export interface ScreenOptionsConfig {
   title?: string
   headerShown?: boolean
+  // For Tab Screens
   tabBarIconName?: string
-  drawerLabel?: string | ((props: { focused: boolean; color: string }) => React.ReactNode)
-  drawerIcon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode
+  // For Drawer Screens
+  drawerLabel?:
+    | string
+    | ((props: { focused: boolean; color: string }) => React.ReactNode)
+  drawerIcon?: (props: {
+    focused: boolean
+    color: string
+    size: number
+  }) => React.ReactNode
   drawerItemStyle?: ViewStyle
+  // Can also include Stack screen options if needed directly
+  // Example: cardStyle, presentation, etc.
+  [key: string]: any // Allow other React Navigation options
 }
 
 export interface ScreenConfig {
+  type: 'screen'
   name: string
   component: ComponentType<any>
   options?: ScreenOptionsConfig
   href?: string // Optional: Primarily for Next.js linking
 }
 
-export interface TabNavigatorOwnOptions {
-  tabBarActiveTintColor?: string
-  tabBarInactiveTintColor?: string
-  tabBarStyle?: ViewStyle
+// Options specific to the Tab navigator itself (e.g., tab bar style)
+export interface TabNavigatorOwnOptions extends BottomTabNavigationOptions {
+  // Keep BottomTabNavigationOptions for full compatibility
+  // tabBarActiveTintColor?: string; // Already in BottomTabNavigationOptions
+  // tabBarInactiveTintColor?: string; // Already in BottomTabNavigationOptions
+  // tabBarStyle?: ViewStyle; // Already in BottomTabNavigationOptions
 }
-
-export interface TabNavigatorScreenOptions extends ScreenOptionsConfig {}
 
 export interface TabNavigatorLayoutConfig {
   type: 'tabs'
   name: string
   initialRouteName?: string
   screens: ScreenConfig[] // Screens within tabs are always ScreenConfig
-  stackScreenOptions?: ScreenOptionsConfig
-  tabNavigatorOptions?: TabNavigatorOwnOptions
-  tabScreenOptions?: TabNavigatorScreenOptions
+  options?: ScreenOptionsConfig // Options for this Tab Navigator when it's a screen in a parent (e.g., Drawer label)
+  tabNavigatorOptions?: TabNavigatorOwnOptions // Options for the tab bar itself
+  tabScreenOptions?: ScreenOptionsConfig // Default options for screens within this tab navigator
 }
 
-// Forward declaration for recursive types
-type NavigationSchemaItem = ScreenConfig | TabNavigatorLayoutConfig | DrawerNavigatorLayoutConfig
+export interface DrawerNavigatorOwnOptions extends DrawerNavigationOptions {
+  // Keep DrawerNavigationOptions for full compatibility
+}
 
 export interface DrawerNavigatorLayoutConfig {
   type: 'drawer'
   name: string
   initialRouteName?: string
-  screens: NavigationSchemaItem[] // Drawer can contain simple screens or other navigators like Tabs
-  stackScreenOptions?: ScreenOptionsConfig
-  drawerNavigatorOptions?: GenericNavigationOptions
-  drawerScreenOptions?: GenericNavigationOptions
+  screens: NavigationSchemaItem[]
+  options?: ScreenOptionsConfig // Options for this Drawer Navigator when it's a screen in a parent
+  drawerNavigatorOptions?: DrawerNavigatorOwnOptions // Options for the drawer panel itself
+  drawerScreenOptions?: ScreenOptionsConfig // Default options for screens within this drawer
 }
 
+export interface StackNavigatorOwnOptions extends StackNavigationOptions {
+  // Keep StackNavigationOptions for full compatibility
+}
 export interface StackNavigatorLayoutConfig {
   type: 'stack'
   name: string
   initialRouteName?: string
-  screens: NavigationSchemaItem[] // Stack can contain Screens, Tabs, or Drawers
-  options?: ScreenOptionsConfig & {}
+  screens: NavigationSchemaItem[]
+  options?: ScreenOptionsConfig // Options for this Stack Navigator (e.g. if it's a screen) OR default screen options within it
+  stackNavigatorOptions?: StackNavigatorOwnOptions // Options for the stack navigator itself
+  // stackScreenOptions?: ScreenOptionsConfig; // If you want a separate prop for default screen options in stack
 }
+
+export type NavigationSchemaItem =
+  | ScreenConfig
+  | TabNavigatorLayoutConfig
+  | DrawerNavigatorLayoutConfig
+  | StackNavigatorLayoutConfig
 
 export type NavigatorLayout =
   | StackNavigatorLayoutConfig
   | TabNavigatorLayoutConfig
   | DrawerNavigatorLayoutConfig
 
-export type NavigationStructureItem = NavigatorLayout | ScreenConfig // ScreenConfig shouldn't be at top level of appNavigationStructure
-
-// --- Placeholder Components ---
-// Used when the component is determined by file-system routing (Expo) or children (Next.js)
-const ExpoRouterManagedComponent = () => null
+// Helper to simulate an icon, replace with your actual icon library
+export const PlaceholderIcon = ({
+  name,
+  color,
+  size,
+}: {
+  name: string
+  color: string
+  size: number
+}) => (
+  <Text style={{ color: color, fontSize: size }}>
+    {name.charAt(0).toUpperCase()}
+  </Text>
+)
 
 // --- Main Navigation Structure ---
 export const appNavigationStructure: NavigatorLayout[] = [
@@ -86,58 +120,61 @@ export const appNavigationStructure: NavigatorLayout[] = [
     type: 'stack',
     name: 'Root',
     initialRouteName: '(drawer)',
-    options: { headerShown: false },
+    options: { headerShown: false }, // This ScreenOptionsConfig applies to the Root stack itself if it were a screen, or default for its screens.
+    // stackNavigatorOptions: { headerShown: false }, // More explicit for navigator options
     screens: [
       {
         type: 'drawer',
         name: '(drawer)',
         initialRouteName: '(tabs)',
-        stackScreenOptions: {
-          headerShown: false,
+        // options for (drawer) *as a screen* within the 'Root' stack:
+        options: {
+          headerShown: false, // Example: Stack header for the drawer screen itself
         },
         drawerNavigatorOptions: {
-          // --- KEY ADDITIONS/MODIFICATIONS HERE ---
-          defaultStatus: 'closed', // Explicitly tell the drawer to start closed
+          defaultStatus: 'closed',
           drawerStyle: {
-            backgroundColor: 'white', // Set a default background color. Replace 'white' with your theme's color.
-            width: 280, // Or your desired drawer width
+            backgroundColor: 'white',
+            width: 280,
           },
-          overlayColor: 'rgba(0, 0, 0, 0.5)', // Optional: for the screen overlay when drawer is open
-          // drawerType: 'front', // 'front', 'back', 'slide'. Default is usually fine.
-          // --- END KEY ADDITIONS ---
+          overlayColor: 'rgba(0, 0, 0, 0.5)',
         },
         drawerScreenOptions: {
+          // Default options for screens *inside* the drawer
           headerShown: true,
-          // headerLeft is handled in the platform-specific layout
         },
         screens: [
-          // ... your (tabs), settings, options screens ...
           {
             type: 'tabs',
             name: '(tabs)',
-            component: ExpoRouterManagedComponent,
-            href: '/drawer',
+            // component and href removed as TabsLayout will be used directly in drawer layout
             initialRouteName: 'home',
+            // Options for (tabs) *as a screen/item* within the (drawer)
             options: {
               title: 'Vidream Main',
-              drawerItemStyle: { display: 'none' },
+              drawerItemStyle: { display: 'none' }, // Hide it from drawer list if tabs are primary content
+              drawerLabel: 'Home Base', // Or some other label if it wasn't hidden
             },
-            tabNavigatorOptions: {},
+            tabNavigatorOptions: {
+              // specific options for the bottom tab bar itself
+            },
             tabScreenOptions: {
+              // Default options for screens *inside* these tabs
               headerShown: false,
             },
             screens: [
-              // ... tab screens (home, account, subs)
               {
+                type: 'screen',
                 name: 'home',
                 component: HomeScreen,
-                href: '/drawer/home', // Or just /drawer if home is the root of tabs
+                href: '/drawer/home',
                 options: {
                   title: 'Home',
                   tabBarIconName: 'home',
                 },
               },
               {
+                type: 'screen',
                 name: 'account',
                 component: AccountScreen,
                 href: '/drawer/account',
@@ -147,6 +184,7 @@ export const appNavigationStructure: NavigatorLayout[] = [
                 },
               },
               {
+                type: 'screen',
                 name: 'subs',
                 component: SubsScreen,
                 href: '/drawer/subs',
@@ -158,19 +196,23 @@ export const appNavigationStructure: NavigatorLayout[] = [
             ],
           },
           {
+            type: 'screen',
             name: 'settings',
             component: SettingsScreen,
             href: '/drawer/settings',
             options: {
+              // Options for 'settings' *as a screen/item* within the (drawer)
               title: 'Settings',
               drawerLabel: 'Settings',
             },
           },
           {
+            type: 'screen',
             name: 'options',
             component: OptionsScreen,
             href: '/drawer/options',
             options: {
+              // Options for 'options' *as a screen/item* within the (drawer)
               title: 'Options',
               drawerLabel: 'Options',
             },
@@ -180,6 +222,40 @@ export const appNavigationStructure: NavigatorLayout[] = [
     ],
   },
 ]
+
+// --- Helper Functions ---
+export const findNavigatorLayout = (
+  name: string,
+  structureToSearch: NavigationStructureItem[] = appNavigationStructure as NavigationStructureItem[] // Cast to allow top-level items
+): NavigationStructureItem | undefined => {
+  for (const item of structureToSearch) {
+    if (item.name === name) return item
+
+    // Check if it's a navigator type and has screens to search recursively
+    if (
+      'screens' in item &&
+      (item as NavigatorLayout).screens &&
+      Array.isArray((item as NavigatorLayout).screens)
+    ) {
+      const foundInScreens = findNavigatorLayout(
+        name,
+        (item as NavigatorLayout).screens as NavigationStructureItem[]
+      )
+      if (foundInScreens) return foundInScreens
+    }
+  }
+  return undefined
+}
+
+export const getRootStackConfig = ():
+  | StackNavigatorLayoutConfig
+  | undefined => {
+  const rootConfig = appNavigationStructure.find(
+    (nav): nav is StackNavigatorLayoutConfig =>
+      nav.type === 'stack' && nav.name === 'Root'
+  )
+  return rootConfig
+}
 
 // export const appNavigationStructure: NavigatorLayout[] = [
 //   {
@@ -282,54 +358,56 @@ export const appNavigationStructure: NavigatorLayout[] = [
 //   },
 // ]
 
+// // --- Helper Functions ---
+// export const findNavigatorLayout = (
+//   name: string,
+//   structureToSearch: NavigationStructureItem[] = appNavigationStructure as NavigationStructureItem[] // Cast to allow top-level items
+// ): NavigationStructureItem | undefined => {
+//   for (const item of structureToSearch) {
+//     if (item.name === name) return item
 
-// --- Helper Functions ---
-export const findNavigatorLayout = (
-  name: string,
-  structureToSearch: NavigationStructureItem[] = appNavigationStructure as NavigationStructureItem[] // Cast to allow top-level items
-): NavigationStructureItem | undefined => {
-  for (const item of structureToSearch) {
-    if (item.name === name) return item
+//     // Check if it's a navigator type and has screens to search recursively
+//     if (
+//       'screens' in item &&
+//       (item as NavigatorLayout).screens &&
+//       Array.isArray((item as NavigatorLayout).screens)
+//     ) {
+//       const foundInScreens = findNavigatorLayout(
+//         name,
+//         (item as NavigatorLayout).screens as NavigationStructureItem[]
+//       )
+//       if (foundInScreens) return foundInScreens
+//     }
+//   }
+//   return undefined
+// }
 
-    // Check if it's a navigator type and has screens to search recursively
-    if (
-      'screens' in item &&
-      (item as NavigatorLayout).screens &&
-      Array.isArray((item as NavigatorLayout).screens)
-    ) {
-      const foundInScreens = findNavigatorLayout(
-        name,
-        (item as NavigatorLayout).screens as NavigationStructureItem[]
-      )
-      if (foundInScreens) return foundInScreens
-    }
-  }
-  return undefined
-}
+// export const getRootStackConfig = ():
+//   | StackNavigatorLayoutConfig
+//   | undefined => {
+//   const rootConfig = appNavigationStructure.find(
+//     (nav): nav is StackNavigatorLayoutConfig =>
+//       nav.type === 'stack' && nav.name === 'Root'
+//   )
+//   return rootConfig
+// }
 
-export const getRootStackConfig = (): StackNavigatorLayoutConfig | undefined => {
-  const rootConfig = appNavigationStructure.find(
-    (nav): nav is StackNavigatorLayoutConfig => nav.type === 'stack' && nav.name === 'Root'
-  )
-  return rootConfig
-}
-
-export const PlaceholderIcon = ({
-  name,
-  color,
-  size,
-}: {
-  name?: string
-  color: string
-  size: number
-}) => {
-  if (!name) return null
-  return (
-    <Text style={{ color, fontSize: size, fontWeight: 'bold' }}>
-      {name.substring(0, 2).toUpperCase()}
-    </Text>
-  )
-}
+// export const PlaceholderIcon = ({
+//   name,
+//   color,
+//   size,
+// }: {
+//   name?: string
+//   color: string
+//   size: number
+// }) => {
+//   if (!name) return null
+//   return (
+//     <Text style={{ color, fontSize: size, fontWeight: 'bold' }}>
+//       {name.substring(0, 2).toUpperCase()}
+//     </Text>
+//   )
+// }
 
 // import { ComponentType } from 'react'
 // import { Text } from 'react-native' // For placeholder icon

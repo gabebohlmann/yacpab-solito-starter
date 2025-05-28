@@ -1,68 +1,48 @@
 // apps/next/app/(drawer)/layout.tsx
 'use client'
 
-// import React from 'react'
 import React, { useState, useEffect } from 'react'
 import {
   createDrawerNavigator,
   DrawerNavigationOptions,
-  DrawerContentComponentProps, // For typing custom drawer content if you add it later
+  // DrawerContentComponentProps, // Keep if you plan to use custom drawer content
 } from '@react-navigation/drawer'
 import {
-  useNavigation as useReactNativeNavigation, // Renamed to avoid conflict with Next.js useRouter
+  useNavigation as useReactNativeNavigation,
   DrawerActions,
-  // useNavigationState, // We'll use route.name from screenOptions
+  RouteProp,
 } from '@react-navigation/native'
-import { useRouter as useNextRouter, usePathname } from 'next/navigation' // For back navigation
+// import { useRouter as useNextRouter, usePathname } from 'next/navigation'; // Keep if needed for other logic
 import { Pressable, Text, View, StyleSheet } from 'react-native'
 
-// Import shared navigation configuration and types
 import {
   findNavigatorLayout,
   DrawerNavigatorLayoutConfig,
-  ScreenConfig, // ScreenConfig from shared layout
-  TabNavigatorLayoutConfig, // For identifying the (tabs) screen config
+  ScreenConfig,
+  TabNavigatorLayoutConfig,
+  NavigationSchemaItem, // Import this for clarity
+  ScreenOptionsConfig, // Import for casting or type hints
 } from 'app/features/navigation/layout'
 
-// Import the TabsLayout which will be a screen component for the drawer
-import TabsLayout from './(tabs)/layout'
-
-// Import page components (these should export the shared screen components)
-// The actual components will be sourced from drawerConfig.screens[...].component
-// For example, if settings/page.tsx exports SettingsScreen from features:
-// import SettingsPage from './settings/page'; // Not strictly needed here if using drawerConfig
+import TabsLayout from './(tabs)/layout' // Component for the (tabs) screen
 
 const RNDrawer = createDrawerNavigator()
 
-// --- Placeholder Icons (Replace with your actual icon components) ---
 const BackIconComponent = () => <Text style={styles.iconText}>‹</Text>
 const HamburgerIconComponent = () => <Text style={styles.iconText}>☰</Text>
-// --- End Placeholder Icons ---
 
-// Custom HeaderLeft Component for the Drawer Navigator
-// Now receives `currentDrawerRouteName` directly
 function CustomDrawerHeaderLeft({
   currentDrawerRouteName,
 }: {
   currentDrawerRouteName: string
 }) {
-  // const nextRouter = useNextRouter(); // Use NextRouter for back if needed, but Drawer can navigate itself
-  const reactNativeNavigation = useReactNativeNavigation() // Drawer's navigation object
-
+  const reactNativeNavigation = useReactNativeNavigation()
   const isTabsScreenActive = currentDrawerRouteName === '(tabs)'
 
-  // NOTE: For the back button, instead of nextRouter.back(),
-  // it's often better for React Navigation to handle its own stack.
-  // Here, navigating to '(tabs)' makes sense as it's the "home base" within the drawer.
-  // If you wanted true "stack pop" behavior, the screens would need to be in a StackNavigator
-  // nested inside the Drawer screen, or the Drawer itself would need to be part of a larger stack.
-  // For simplicity, navigating back to '(tabs)' is a clear action.
-
   if (!isTabsScreenActive) {
-    // If Drawer's active screen is NOT (tabs) (e.g., it's 'settings')
     return (
       <Pressable
-        onPress={() => reactNativeNavigation.navigate('(tabs)' as never)} // Navigate Drawer to its (tabs) screen
+        onPress={() => reactNativeNavigation.navigate('(tabs)' as never)}
         hitSlop={20}
         style={styles.headerButton}
       >
@@ -70,7 +50,6 @@ function CustomDrawerHeaderLeft({
       </Pressable>
     )
   } else {
-    // If Drawer's active screen IS (tabs)
     return (
       <Pressable
         onPress={() =>
@@ -86,15 +65,14 @@ function CustomDrawerHeaderLeft({
 }
 
 export default function DrawerLayout({
-  children,
+  children, // children might not be directly used if all content is via navigator
 }: {
   children: React.ReactNode
 }) {
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
+  // const [isClient, setIsClient] = useState(false); // 'use client' handles client-side execution
+  // useEffect(() => {
+  //   setIsClient(true);
+  // }, []);
 
   const drawerConfig = findNavigatorLayout('(drawer)') as
     | DrawerNavigatorLayoutConfig
@@ -104,50 +82,48 @@ export default function DrawerLayout({
     console.error(
       "Drawer configuration '(drawer)' not found or is not the correct type!"
     )
-    return <View style={styles.container}>{children}</View>
+    return <View style={styles.container}>{children}</View> // Fallback
   }
 
-  // Determine the title for the header based on the current React Navigation Drawer route,
-  // then try Next.js pathname matching as a fallback if titles are meant to be page-specific.
-  // For this setup, React Navigation route's title is more direct.
   const getHeaderTitle = (currentDrawerRouteName: string): string => {
     const screenConf = drawerConfig.screens.find(
-      (s) => s.name === currentDrawerRouteName
+      (s: NavigationSchemaItem) => s.name === currentDrawerRouteName
     )
+
+    // screenConf can be ScreenConfig, TabNavigatorLayoutConfig, etc.
+    // All are now expected to have an optional `options` property of type ScreenOptionsConfig
     if (screenConf?.options?.title) {
       return screenConf.options.title
     }
-    // If it's the (tabs) route, and it has a specific title in drawer config
-    if (currentDrawerRouteName === '(tabs)') {
-      const tabsGroupInDrawer = drawerConfig.screens.find(
-        (s) => s.name === '(tabs)'
-      ) as TabNavigatorLayoutConfig | ScreenConfig | undefined
-      if (tabsGroupInDrawer?.options?.title) {
-        return tabsGroupInDrawer.options.title
-      }
-      // If (tabs) has no title, but an active tab within TabsLayout should set it:
-      // This requires TabsLayout to communicate its active tab's title up to the Drawer.
-      // This is more complex. For now, we'll use the title set for the (tabs) screen in Drawer.
-    }
-    return drawerConfig.name // Fallback
+    // Specific handling for (tabs) if its title might be derived differently,
+    // but the above should cover it if (tabs) config has options.title.
+    return drawerConfig.name // Fallback to drawer's own name (less likely used for title)
   }
 
   return (
     <RNDrawer.Navigator
       initialRouteName={drawerConfig.initialRouteName || '(tabs)'}
-      screenOptions={({ route }) => ({
-        // `route` here is the Drawer's route object
-        ...(drawerConfig.drawerScreenOptions as DrawerNavigationOptions),
-        headerShown: true,
-        headerLeft: () => (
-          <CustomDrawerHeaderLeft currentDrawerRouteName={route.name} />
-        ),
-        title: getHeaderTitle(route.name), // Dynamically set title based on Drawer's active screen
-      })}
-      {...(drawerConfig.drawerNavigatorOptions as DrawerNavigationOptions)}
+      // Spread options for the drawer navigator itself (e.g., drawerStyle)
+      // Ensure DrawerNavigatorOwnOptions is compatible with what createDrawerNavigator expects
+      {...(drawerConfig.drawerNavigatorOptions as DrawerNavigationOptions)} // Cast if custom
+      screenOptions={({ route }: { route: RouteProp<any, any> }) => {
+        // Use more generic route type from RN
+        const baseScreenOptions: DrawerNavigationOptions = {
+          // Apply global screen options from drawerConfig
+          ...(drawerConfig.drawerScreenOptions as DrawerNavigationOptions), // Cast if custom
+        }
+
+        return {
+          ...baseScreenOptions,
+          headerShown: true,
+          headerLeft: () => (
+            <CustomDrawerHeaderLeft currentDrawerRouteName={route.name} />
+          ),
+          title: getHeaderTitle(route.name),
+        }
+      }}
     >
-      {drawerConfig.screens.map((screenOrNavConfig) => {
-        // Handle the nested (tabs) navigator
+      {drawerConfig.screens.map((screenOrNavConfig: NavigationSchemaItem) => {
         if (
           screenOrNavConfig.type === 'tabs' &&
           screenOrNavConfig.name === '(tabs)'
@@ -157,10 +133,11 @@ export default function DrawerLayout({
             <RNDrawer.Screen
               key={tabNavConfig.name}
               name={tabNavConfig.name}
-              component={TabsLayout} // Directly use the imported TabsLayout
+              component={TabsLayout} // TabsLayout component renders the BottomTabNavigator
               options={{
-                ...(tabNavConfig.options as DrawerNavigationOptions), // Drawer item options
-                // title: is handled by screenOptions.title above for dynamic update
+                // Options for this tab navigator *as an item in the drawer*
+                // Ensure ScreenOptionsConfig is compatible with DrawerNavigationOptions for these fields
+                ...(tabNavConfig.options as DrawerNavigationOptions), // Cast if custom
                 drawerItemStyle: tabNavConfig.options?.drawerItemStyle || {
                   display: 'none',
                 },
@@ -171,19 +148,17 @@ export default function DrawerLayout({
               }}
             />
           )
-        } else if (!('type' in screenOrNavConfig)) {
-          // It's a ScreenConfig
+        } else if (screenOrNavConfig.type === 'screen') {
           const screenConfig = screenOrNavConfig as ScreenConfig
-          // Ensure your Next.js pages (e.g., app/(drawer)/settings/page.tsx)
-          // export the component defined in screenConfig.component.
           return (
             <RNDrawer.Screen
               key={screenConfig.name}
               name={screenConfig.name}
-              component={screenConfig.component} // e.g., SettingsScreen from shared features
+              component={screenConfig.component}
               options={{
-                ...(screenConfig.options as DrawerNavigationOptions),
-                // title: is handled by screenOptions.title above
+                // Options for this screen *as an item in the drawer*
+                // Ensure ScreenOptionsConfig is compatible with DrawerNavigationOptions
+                ...(screenConfig.options as DrawerNavigationOptions), // Cast if custom
                 drawerLabel:
                   screenConfig.options?.drawerLabel ||
                   screenConfig.options?.title,
@@ -191,6 +166,7 @@ export default function DrawerLayout({
             />
           )
         }
+        // Add handling for other types like 'drawer' or 'stack' if they can be direct children of a drawer screen
         return null
       })}
     </RNDrawer.Navigator>
@@ -207,8 +183,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   iconText: {
-    fontSize: 22, // Consistent size
-    color: '#007AFF',
+    fontSize: 22,
+    color: '#007AFF', // Example color
   },
 })
 
