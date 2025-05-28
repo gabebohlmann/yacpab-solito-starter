@@ -1,3 +1,4 @@
+// apps/next/next.config.js
 /**
  * @type {import('next').NextConfig}
  */
@@ -74,7 +75,8 @@ module.exports = {
     'solito',
     'react-native-reanimated',
     'moti',
-    'react-native-gesture-handler',
+    'react-native-gesture-handler',   
+    '@react-navigation/native',
   ],
 
   compiler: {
