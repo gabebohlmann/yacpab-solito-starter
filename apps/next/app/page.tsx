@@ -1,10 +1,10 @@
 // apps/next/app/page.tsx
 'use client'
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { createStackNavigator } from '@react-navigation/stack'
 import DrawerLayout from './(drawer)/layout'
 
-const Stack = createNativeStackNavigator()
+const Stack = createStackNavigator()
 
 // Root stack navigator structure
 export default function AppRootStack() {
