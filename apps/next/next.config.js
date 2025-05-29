@@ -36,7 +36,7 @@ const withWebpack = {
  * @type {import('next').NextConfig}
  */
 const withTurpopack = {
-  experimental: {
+  config: {
     turbo: {
       resolveAlias: {
         'react-native': 'react-native-web',
