@@ -73,6 +73,8 @@ export default function TabsLayout() {
           ),
           // title: screen?.options?.title, // Handled by spread below if options are compatible
           // headerShown: screen?.options?.headerShown, // Handled by spread below
+          // TODDO: figure out why this variable has to be set here, should be passed by props but that doesn't work
+          headerShown: false
         }
       }}
     >
