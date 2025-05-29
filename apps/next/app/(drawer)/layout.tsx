@@ -1,7 +1,7 @@
 // apps/next/app/(drawer)/layout.tsx
 'use client'
 
-import React from 'react' // Removed unused useState, useEffect
+import React from 'react'
 import {
   createDrawerNavigator,
   DrawerNavigationOptions,
@@ -9,8 +9,8 @@ import {
 import {
   useNavigation as useReactNativeNavigation,
   DrawerActions,
-  RouteProp, // Keep for typing screenOptions route
-  ParamListBase, // For generic RouteProp
+  RouteProp,
+  ParamListBase,
 } from '@react-navigation/native'
 import { Pressable, Text, View, StyleSheet } from 'react-native'
 
@@ -20,10 +20,9 @@ import {
   ScreenConfig,
   TabNavigatorLayoutConfig,
   NavigationSchemaItem,
-  // ScreenOptionsConfig, // Not directly used here, types come via DrawerNavigationOptions
 } from 'app/features/navigation/layout'
 
-import TabsLayout from './(tabs)/layout' // Component for the (tabs) screen
+import TabsLayout from './(tabs)/layout'
 
 const RNDrawer = createDrawerNavigator()
 
@@ -41,7 +40,7 @@ function CustomDrawerHeaderLeft({
   if (!isTabsScreenActive) {
     return (
       <Pressable
-        onPress={() => reactNativeNavigation.navigate('(tabs)' as never)} // Cast to never if type checking is strict on navigate
+        onPress={() => reactNativeNavigation.navigate('(tabs)' as never)}
         hitSlop={20}
         style={styles.headerButton}
       >
@@ -66,7 +65,7 @@ function CustomDrawerHeaderLeft({
 export default function DrawerLayout({
   children,
 }: {
-  children?: React.ReactNode // children is optional as per previous fix
+  children?: React.ReactNode
 }) {
   const drawerConfig = findNavigatorLayout('(drawer)') as
     | DrawerNavigatorLayoutConfig
@@ -76,10 +75,9 @@ export default function DrawerLayout({
     console.error(
       "Drawer configuration '(drawer)' not found or is not the correct type!"
     )
-    return <View style={styles.container}>{children}</View> // Fallback
+    return <View style={styles.container}>{children}</View>
   }
 
-  // Extract navigator options and screen options for clarity
   const navigatorOptions = drawerConfig.drawerNavigatorOptions || {}
   const defaultScreenOptionsFromConfig = navigatorOptions.screenOptions || {}
 
@@ -90,30 +88,24 @@ export default function DrawerLayout({
     if (screenConf?.options?.title) {
       return screenConf.options.title
     }
-    return drawerConfig.name // Fallback
+    return drawerConfig.name
   }
 
   return (
     <RNDrawer.Navigator
-      // Correctly access initialRouteName from drawerNavigatorOptions
       initialRouteName={navigatorOptions.initialRouteName || '(tabs)'}
-      // Spread other navigator-level options
-      {...(navigatorOptions as DrawerNavigationOptions)} // Cast if your DrawerNavigatorPropsForNavigatorItself is not a perfect superset
-      // Define screenOptions for the navigator
+      {...(navigatorOptions as DrawerNavigationOptions)}
       screenOptions={({
         route,
       }: {
         route: RouteProp<ParamListBase, string>
       }) => {
-        // Using ParamListBase for generic route
         const baseScreenOptions: DrawerNavigationOptions = {
-          // Apply global screen options from drawerConfig.drawerNavigatorOptions.screenOptions
           ...(defaultScreenOptionsFromConfig as DrawerNavigationOptions),
         }
-
         return {
           ...baseScreenOptions,
-          headerShown: true, // Or source from baseScreenOptions.headerShown if defined
+          headerShown: true,
           headerLeft: () => (
             <CustomDrawerHeaderLeft currentDrawerRouteName={route.name} />
           ),
@@ -140,9 +132,11 @@ export default function DrawerLayout({
                 drawerLabel:
                   tabNavConfig.options?.drawerLabel ||
                   tabNavConfig.options?.title ||
-                  'Home', // Default label
+                  'Home',
               }}
-              initialParams={tabNavConfig.initialParams} // Assuming TabNavigatorLayoutConfig can have initialParams
+              // This line will be valid once TabNavigatorLayoutConfig in
+              // packages/app/features/navigation/layout.tsx includes 'initialParams?: object;'
+              initialParams={tabNavConfig.initialParams}
             />
           )
         } else if (screenOrNavConfig.type === 'screen') {
@@ -158,7 +152,7 @@ export default function DrawerLayout({
                   screenConfig.options?.drawerLabel ||
                   screenConfig.options?.title,
               }}
-              initialParams={screenConfig.initialParams}
+              initialParams={screenConfig.initialParams} // This is fine as ScreenConfig has initialParams
             />
           )
         }
@@ -179,7 +173,7 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 22,
-    color: '#007AFF', // Example color
+    color: '#007AFF',
   },
 })
 

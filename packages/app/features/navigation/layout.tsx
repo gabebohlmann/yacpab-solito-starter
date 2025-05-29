@@ -86,6 +86,7 @@ export interface TabNavigatorLayoutConfig {
   screens: ScreenConfig[]
   options?: ScreenOptionsConfig // Options for this Tab Navigator when it acts as a screen in a parent
   tabNavigatorOptions?: TabNavigatorPropsForNavigatorItself // Props for the <Tab.Navigator> itself
+  initialParams?: object
 }
 
 // --- Drawer Navigator Specific Types ---
@@ -128,6 +129,7 @@ export interface DrawerNavigatorLayoutConfig {
   screens: NavigationSchemaItem[]
   options?: ScreenOptionsConfig // Options for this Drawer Navigator when it acts as a screen
   drawerNavigatorOptions?: DrawerNavigatorPropsForNavigatorItself // Props for the <Drawer.Navigator>
+  initialParams?: object
 }
 
 // --- Stack Navigator Specific Types ---
@@ -157,6 +159,7 @@ export interface StackNavigatorLayoutConfig {
   screens: NavigationSchemaItem[]
   options?: ScreenOptionsConfig // Options for this Stack Navigator if it acts as a screen
   stackNavigatorOptions?: StackNavigatorPropsForNavigatorItself // Props for the <Stack.Navigator>
+  initialParams?: object
 }
 
 // --- Union Types for Navigation Structure ---
