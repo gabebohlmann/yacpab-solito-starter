@@ -1,26 +1,45 @@
 // packages/app/features/navigation/layout.tsx
 import { ComponentType } from 'react'
-import { Text, ViewStyle } from 'react-native' // Keep Text for PlaceholderIcon example
+import { Text, ViewStyle } from 'react-native'
 import { HomeScreen } from '../home/screen'
 import { AccountScreen } from '../account/screen'
 import { SubsScreen } from '../subs/screen'
 import { SettingsScreen } from '../settings/screen'
 import { OptionsScreen } from '../options/screen'
-import { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs'
-import { DrawerNavigationOptions } from '@react-navigation/drawer'
-import { StackNavigationOptions } from '@react-navigation/stack'
 
-// Generic options type, can be a union of specific navigator options if refined further
-type GenericNavigatorSpecificOptions = any // For navigator-level settings like drawerType, tabBarStyle etc.
+import {
+  BottomTabNavigationOptions,
+  BottomTabScreenProps,
+} from '@react-navigation/bottom-tabs'
+import {
+  DrawerNavigationOptions,
+  DrawerScreenProps as RNDrawerScreenProps,
+} from '@react-navigation/drawer'
+import {
+  NativeStackNavigationOptions,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack' // Changed from @react-navigation/stack for consistency if using createNativeStackNavigator
+import {
+  NavigatorScreenParams,
+  ParamListBase,
+  RouteProp,
+} from '@react-navigation/native'
 
-// --- Configuration Types ---
+// --- Generic Configuration Types ---
 
+/**
+ * ScreenOptionsConfig: Options that can apply to any screen or to a navigator *when it acts as a screen*.
+ * This includes titles, header visibility, and specific UI elements for drawers or tabs.
+ */
 export interface ScreenOptionsConfig {
   title?: string
   headerShown?: boolean
-  // For Tab Screens
-  tabBarIconName?: string
-  // For Drawer Screens
+  // For Tab Screens/Items
+  tabBarIconName?: string // Custom prop for your icon component
+  tabBarLabel?:
+    | string
+    | ((props: { focused: boolean; color: string }) => React.ReactNode)
+  // For Drawer Screens/Items
   drawerLabel?:
     | string
     | ((props: { focused: boolean; color: string }) => React.ReactNode)
@@ -30,64 +49,98 @@ export interface ScreenOptionsConfig {
     size: number
   }) => React.ReactNode
   drawerItemStyle?: ViewStyle
-  // Can also include Stack screen options if needed directly
-  // Example: cardStyle, presentation, etc.
-  [key: string]: any // Allow other React Navigation options
+  // Allow other React Navigation options by using an index signature or more specific types from @react-navigation
+  [key: string]: any // Allows flexibility, but be cautious with type safety.
 }
 
+// --- Screen Configuration ---
 export interface ScreenConfig {
   type: 'screen'
   name: string
-  component: ComponentType<any>
+  component: ComponentType<any> // Consider using ScreenComponentType from @react-navigation/core if more specific typing is needed
   options?: ScreenOptionsConfig
   href?: string // Optional: Primarily for Next.js linking
+  initialParams?: object
 }
 
-// Options specific to the Tab navigator itself (e.g., tab bar style)
-export interface TabNavigatorOwnOptions extends BottomTabNavigationOptions {
-  // Keep BottomTabNavigationOptions for full compatibility
-  // tabBarActiveTintColor?: string; // Already in BottomTabNavigationOptions
-  // tabBarInactiveTintColor?: string; // Already in BottomTabNavigationOptions
-  // tabBarStyle?: ViewStyle; // Already in BottomTabNavigationOptions
+// --- Tab Navigator Specific Types ---
+/**
+ * TabNavigatorPropsForNavigatorItself: Props that apply directly to the <Tab.Navigator> component.
+ * Extends BottomTabNavigationOptions to include all standard props plus any custom ones.
+ */
+export interface TabNavigatorPropsForNavigatorItself
+  extends BottomTabNavigationOptions {
+  id?: string
+  initialRouteName?: string
+  screenOptions?: ScreenOptionsConfig // Default options for screens within this tab navigator
+  // Add any other custom props you pass directly to Tab.Navigator
 }
 
 export interface TabNavigatorLayoutConfig {
   type: 'tabs'
   name: string
-  initialRouteName?: string
-  screens: ScreenConfig[] // Screens within tabs are always ScreenConfig
-  options?: ScreenOptionsConfig // Options for this Tab Navigator when it's a screen in a parent (e.g., Drawer label)
-  tabNavigatorOptions?: TabNavigatorOwnOptions // Options for the tab bar itself
-  tabScreenOptions?: ScreenOptionsConfig // Default options for screens within this tab navigator
+  screens: ScreenConfig[]
+  options?: ScreenOptionsConfig // Options for this Tab Navigator when it acts as a screen in a parent (e.g., Drawer label)
+  tabNavigatorOptions?: TabNavigatorPropsForNavigatorItself // Props for the <Tab.Navigator>
+  // tabScreenOptions is covered by screenOptions within tabNavigatorOptions if following React Navigation pattern
 }
 
-export interface DrawerNavigatorOwnOptions extends DrawerNavigationOptions {
-  // Keep DrawerNavigationOptions for full compatibility
+// --- Drawer Navigator Specific Types ---
+/**
+ * DrawerNavigatorPropsForNavigatorItself: Props that apply directly to the <Drawer.Navigator> component.
+ */
+export interface DrawerNavigatorPropsForNavigatorItself {
+  id?: string
+  initialRouteName?: string
+  defaultStatus?: 'open' | 'closed' // Valid prop for Drawer.Navigator
+  screenOptions?: ScreenOptionsConfig // Default options for screens within this drawer navigator, should be compatible with DrawerNavigationOptions
+  drawerContent?: (
+    props: RNDrawerScreenProps<ParamListBase, string>
+  ) => React.ReactNode
+  useLegacyImplementation?: boolean
+  drawerStyle?: ViewStyle
+  overlayColor?: string
+  drawerType?: 'front' | 'back' | 'slide' | 'permanent'
+  edgeWidth?: number
+  hideStatusBar?: boolean
+  statusBarAnimation?: 'slide' | 'none' | 'fade'
+  keyboardDismissMode?: 'on-drag' | 'none'
+  swipeEnabled?: boolean
+  gestureEnabled?: boolean
+  // ... any other valid props for Drawer.Navigator from @react-navigation/drawer
 }
 
 export interface DrawerNavigatorLayoutConfig {
   type: 'drawer'
   name: string
-  initialRouteName?: string
   screens: NavigationSchemaItem[]
-  options?: ScreenOptionsConfig // Options for this Drawer Navigator when it's a screen in a parent
-  drawerNavigatorOptions?: DrawerNavigatorOwnOptions // Options for the drawer panel itself
-  drawerScreenOptions?: ScreenOptionsConfig // Default options for screens within this drawer
+  options?: ScreenOptionsConfig // Options for this Drawer Navigator when it acts as a screen in a parent
+  drawerNavigatorOptions?: DrawerNavigatorPropsForNavigatorItself // Props for the <Drawer.Navigator>
+  // drawerScreenOptions is covered by screenOptions within drawerNavigatorOptions if following React Navigation pattern
 }
 
-export interface StackNavigatorOwnOptions extends StackNavigationOptions {
-  // Keep StackNavigationOptions for full compatibility
+// --- Stack Navigator Specific Types ---
+/**
+ * StackNavigatorPropsForNavigatorItself: Props that apply directly to the <Stack.Navigator> component.
+ * Extends NativeStackNavigationOptions to include all standard props plus any custom ones.
+ */
+export interface StackNavigatorPropsForNavigatorItself
+  extends NativeStackNavigationOptions {
+  id?: string
+  initialRouteName?: string
+  screenOptions?: ScreenOptionsConfig // Default options for screens within this stack navigator
+  // Add any other custom props you pass directly to Stack.Navigator
 }
+
 export interface StackNavigatorLayoutConfig {
   type: 'stack'
   name: string
-  initialRouteName?: string
   screens: NavigationSchemaItem[]
-  options?: ScreenOptionsConfig // Options for this Stack Navigator (e.g. if it's a screen) OR default screen options within it
-  stackNavigatorOptions?: StackNavigatorOwnOptions // Options for the stack navigator itself
-  // stackScreenOptions?: ScreenOptionsConfig; // If you want a separate prop for default screen options in stack
+  options?: ScreenOptionsConfig // Options for this Stack Navigator if it's a screen OR default options (prefer screenOptions in stackNavigatorOptions for clarity)
+  stackNavigatorOptions?: StackNavigatorPropsForNavigatorItself // Props for the <Stack.Navigator>
 }
 
+// --- Union Types for Navigation Structure ---
 export type NavigationSchemaItem =
   | ScreenConfig
   | TabNavigatorLayoutConfig
@@ -99,68 +152,80 @@ export type NavigatorLayout =
   | TabNavigatorLayoutConfig
   | DrawerNavigatorLayoutConfig
 
-// Helper to simulate an icon, replace with your actual icon library
+// --- Placeholder Icon (Example) ---
 export const PlaceholderIcon = ({
   name,
   color,
   size,
 }: {
-  name: string
+  name?: string
   color: string
   size: number
 }) => (
-  <Text style={{ color: color, fontSize: size }}>
-    {name.charAt(0).toUpperCase()}
+  <Text style={{ color: color, fontSize: size, fontWeight: 'bold' }}>
+    {name ? name.charAt(0).toUpperCase() : '?'}
   </Text>
 )
 
-// --- Main Navigation Structure ---
+// --- Main Navigation Structure Definition ---
 export const appNavigationStructure: NavigatorLayout[] = [
   {
     type: 'stack',
     name: 'Root',
-    initialRouteName: '(drawer)',
-    options: { headerShown: false }, // This ScreenOptionsConfig applies to the Root stack itself if it were a screen, or default for its screens.
-    // stackNavigatorOptions: { headerShown: false }, // More explicit for navigator options
+    stackNavigatorOptions: {
+      // Props for the Root <Stack.Navigator>
+      initialRouteName: '(drawer)',
+      screenOptions: {
+        // Default screen options for screens within Root Stack
+        headerShown: false,
+      },
+    },
+    // 'options' here would be if 'Root' itself was a screen in another navigator. Not typical for the absolute root.
+    // options: { title: "App Root" },
     screens: [
       {
         type: 'drawer',
         name: '(drawer)',
-        initialRouteName: '(tabs)',
-        // options for (drawer) *as a screen* within the 'Root' stack:
+        // 'options' here are for the '(drawer)' item when it's a screen *within* the 'Root' Stack.
         options: {
-          headerShown: false, // Example: Stack header for the drawer screen itself
+          headerShown: false, // Hides the Stack header for the Drawer screen
+          // title: "Main App Drawer" // Title for the Drawer screen in Stack, if header was shown
         },
         drawerNavigatorOptions: {
-          defaultStatus: 'closed',
+          // Props for the <Drawer.Navigator> for '(drawer)'
+          initialRouteName: '(tabs)',
+          defaultStatus: 'closed', // Correctly placed here
           drawerStyle: {
             backgroundColor: 'white',
             width: 280,
           },
           overlayColor: 'rgba(0, 0, 0, 0.5)',
-        },
-        drawerScreenOptions: {
-          // Default options for screens *inside* the drawer
-          headerShown: true,
+          screenOptions: {
+            // Default screen options for screens *within* this Drawer
+            headerShown: true,
+            // headerStyle: { backgroundColor: '#f4511e' },
+            // headerTintColor: '#fff',
+          },
         },
         screens: [
           {
             type: 'tabs',
             name: '(tabs)',
-            // component and href removed as TabsLayout will be used directly in drawer layout
-            initialRouteName: 'home',
-            // Options for (tabs) *as a screen/item* within the (drawer)
+            // 'options' for '(tabs)' *as a screen/item* within the '(drawer)'
             options: {
-              title: 'Vidream Main',
-              drawerItemStyle: { display: 'none' }, // Hide it from drawer list if tabs are primary content
-              drawerLabel: 'Home Base', // Or some other label if it wasn't hidden
+              title: 'Vidream Main', // This will be the title in the Drawer header for this item
+              drawerLabel: 'Dashboard', // Label for the drawer item
+              drawerItemStyle: { display: 'none' }, // Example: hide if it's the main initial content
             },
             tabNavigatorOptions: {
-              // specific options for the bottom tab bar itself
-            },
-            tabScreenOptions: {
-              // Default options for screens *inside* these tabs
-              headerShown: false,
+              // Props for the <Tabs.Navigator> for '(tabs)'
+              initialRouteName: 'home',
+              screenOptions: {
+                // Default screen options for screens *within* these Tabs
+                headerShown: false, // Tabs screens won't show their own header by default (Drawer header is used)
+                // tabBarActiveTintColor: 'tomato',
+                // tabBarInactiveTintColor: 'gray',
+              },
             },
             screens: [
               {
@@ -169,8 +234,10 @@ export const appNavigationStructure: NavigatorLayout[] = [
                 component: HomeScreen,
                 href: '/drawer/home',
                 options: {
+                  // Options for 'home' screen (tab item appearance, header title if shown)
                   title: 'Home',
-                  tabBarIconName: 'home',
+                  tabBarIconName: 'home', // Custom prop for your TabBarIcon component
+                  tabBarLabel: 'Feed',
                 },
               },
               {
@@ -201,9 +268,10 @@ export const appNavigationStructure: NavigatorLayout[] = [
             component: SettingsScreen,
             href: '/drawer/settings',
             options: {
-              // Options for 'settings' *as a screen/item* within the (drawer)
-              title: 'Settings',
-              drawerLabel: 'Settings',
+              // Options for 'settings' screen as a drawer item
+              title: 'Settings', // Header title for this screen when active
+              drawerLabel: 'Settings', // Label in the drawer list
+              // drawerIcon: ({ color, size }) => <PlaceholderIcon name="settings" color={color} size={size} />,
             },
           },
           {
@@ -212,49 +280,55 @@ export const appNavigationStructure: NavigatorLayout[] = [
             component: OptionsScreen,
             href: '/drawer/options',
             options: {
-              // Options for 'options' *as a screen/item* within the (drawer)
               title: 'Options',
-              drawerLabel: 'Options',
+              drawerLabel: 'More Options',
             },
           },
         ],
       },
+      // Example of another screen directly in the Root Stack, sibling to the (drawer)
+      // {
+      //   type: 'screen',
+      //   name: 'modalExample',
+      //   component: SomeModalScreen,
+      //   options: {
+      //     presentation: 'modal', // Stack specific option
+      //     headerShown: true,
+      //     title: 'Modal Screen',
+      //   }
+      // }
     ],
   },
 ]
 
-// --- Helper Functions ---
-export const findNavigatorLayout = (
+// --- Utility Function to Find Navigator Configuration ---
+export function findNavigatorLayout(
   name: string,
-  structureToSearch: NavigationStructureItem[] = appNavigationStructure as NavigationStructureItem[] // Cast to allow top-level items
-): NavigationStructureItem | undefined => {
-  for (const item of structureToSearch) {
-    if (item.name === name) return item
-
-    // Check if it's a navigator type and has screens to search recursively
+  structure: NavigationSchemaItem[] = appNavigationStructure as NavigationSchemaItem[] // Cast because appNavigationStructure is NavigatorLayout[]
+): NavigationSchemaItem | undefined {
+  for (const item of structure) {
+    if (item.name === name) {
+      return item
+    }
+    // Only recurse if item is a navigator type and has screens
     if (
-      'screens' in item &&
-      (item as NavigatorLayout).screens &&
-      Array.isArray((item as NavigatorLayout).screens)
+      item.type === 'stack' ||
+      item.type === 'drawer' ||
+      item.type === 'tabs'
     ) {
-      const foundInScreens = findNavigatorLayout(
-        name,
-        (item as NavigatorLayout).screens as NavigationStructureItem[]
-      )
-      if (foundInScreens) return foundInScreens
+      const navigatorItem = item as
+        | StackNavigatorLayoutConfig
+        | DrawerNavigatorLayoutConfig
+        | TabNavigatorLayoutConfig
+      if (navigatorItem.screens) {
+        const foundInChild = findNavigatorLayout(name, navigatorItem.screens)
+        if (foundInChild) {
+          return foundInChild
+        }
+      }
     }
   }
   return undefined
-}
-
-export const getRootStackConfig = ():
-  | StackNavigatorLayoutConfig
-  | undefined => {
-  const rootConfig = appNavigationStructure.find(
-    (nav): nav is StackNavigatorLayoutConfig =>
-      nav.type === 'stack' && nav.name === 'Root'
-  )
-  return rootConfig
 }
 
 // export const appNavigationStructure: NavigatorLayout[] = [
