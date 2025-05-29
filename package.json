@@ -6,8 +6,6 @@
     "packages/*"
   ],
   "devDependencies": {
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18",
     "eslint": "^9.27.0",
     "turbo": "^2.4.4",
     "typescript": "^5.2.2"
@@ -35,8 +33,6 @@
   "dependencies": {
     "@react-navigation/native": "^7.1.9",
     "@react-navigation/stack": "^7.3.2",
-    "react": "~18.2.0",
-    "react-dom": "~18.2.0",
     "react-native": "^0.79.2",
     "react-native-gesture-handler": "^2.25.0",
     "react-native-reanimated": "^3.17.5",
