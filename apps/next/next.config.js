@@ -75,8 +75,7 @@ module.exports = {
     'solito',
     'react-native-reanimated',
     'moti',
-    'react-native-gesture-handler',   
-    '@react-navigation/native',
+    'react-native-gesture-handler',
   ],
 
   compiler: {
